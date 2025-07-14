@@ -1,3 +1,4 @@
+#
 import asyncio
 import httpx
 from dotenv import load_dotenv
@@ -15,45 +16,75 @@ if "SSL_CERT_FILE" in os.environ:
 
 
 def main():
-    request_url: str = "https://newsapi.org/v2"
+    api_name: str = "newsapi"
     endpoint: str = "top-headlines"
-
-    print(f"Requesting data from {request_url}/{endpoint}...")
-
-    # Get the API key from environment variables
-    api_key = os.getenv("NEWS_API_KEY")
-    if not api_key:
-        raise ValueError(
-            "API key not found. Please set the NEWS_API_KEY environment variable."
-        )
 
     # Define the parameters for the API request
     params: dict = {
         "category": "technology",
         "language": "en,nl",
-        "apiKey": api_key,
     }
 
     # Create an instance of the RESTClient with the request URL
-    client = RESTClient(request_url)
+    client = RESTClientManager()
 
     try:
         # Fetch data from the REST API
-        response = asyncio.run(client.fetch(endpoint, params))
+        response = asyncio.run(client.fetch(api_name, endpoint, params))
         print(f"Number of articles found: {response.get('totalResults', 'Unknown')}")
+    except httpx.HTTPStatusError as e:
+        print(f"HTTP error: {e.response.status_code} - {e.response.text}")
     except Exception as e:
         print(f"Error: {e}")
 
     print(f"{response.get('articles', [])[:3]}")  # Print first 3 articles
 
 
-class RESTClient:
+class RESTClientManager:
+    """Manager for multiple REST clients."""
+
+    def __init__(self):
+        news_api_key = os.getenv("NEWS_API_KEY")
+        if not news_api_key:
+            raise ValueError(
+                "API key not found. Please set the NEWS_API_KEY environment variable."
+            )
+        self.clients = {
+            "newsapi": NewsAPIClient("https://newsapi.org/v2", news_api_key),
+            # Add more APIs here
+        }
+
+    async def fetch(self, api_name: str, endpoint: str, params: dict = None) -> dict:
+        """Initiates a fetch request to the specified API and endpoint.
+
+        Args:
+            api_name (str): Name of the API to fetch from.
+            endpoint (str): Endpoint to fetch data from.
+            params (dict, optional): Request Parameters. Defaults to None.
+
+        Raises:
+            ValueError: If the specified API client does not exist.
+
+        Returns:
+            dict: Response data from the API.
+        """
+
+        client = self.clients.get(api_name)
+        if not client:
+            raise ValueError(f"No REST client found for API '{api_name}'")
+        else:
+            print(f"Requesting data from {client.base_url}/{endpoint}...")
+        return await client.fetch(endpoint, params)
+
+
+class NewsAPIClient:
     """
     A simple REST client for fetching data from a REST API.
     """
 
-    def __init__(self, base_url: str):
+    def __init__(self, base_url: str, api_key: str):
         self.base_url = base_url
+        self.api_key = api_key
 
     async def fetch(self, endpoint: str, params: dict = None) -> dict:
         """Fetches data from the REST API and checks for sources if 'language' is in params.
@@ -65,6 +96,10 @@ class RESTClient:
         Returns:
             dict: Response data from the API.
         """
+        if params is None:
+            params = {}
+        params["apiKey"] = self.api_key  # Always add the API key
+
         if "language" in params and endpoint == "top-headlines":
             # If 'language' is in params, we need to fetch sources first
             # and then use the source IDs in the params for the main request.
