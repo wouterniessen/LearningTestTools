@@ -16,7 +16,6 @@ if "SSL_CERT_FILE" in os.environ:
 
 
 def main():
-
     # Define the parameters for the API request
     api_name: str = "newsapi"
     endpoint: str = "top-headlines"
@@ -28,7 +27,7 @@ def main():
 
     # api_name: str = "weatherapi"
     # endpoint: str = "current.json"
-    
+
     # params: dict = {
     #     "q": "Delft",
     #     "lang": "en",
