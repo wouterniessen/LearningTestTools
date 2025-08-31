@@ -16,22 +16,23 @@ if "SSL_CERT_FILE" in os.environ:
 
 
 def main():
-    # api_name: str = "newsapi"
-    # endpoint: str = "top-headlines"
-
-    api_name: str = "weatherapi"
-    endpoint: str = "current.json"
 
     # Define the parameters for the API request
-    # params: dict = {
-    #     "category": "technology",
-    #     "language": "en,nl",
-    # }
+    api_name: str = "newsapi"
+    endpoint: str = "top-headlines"
 
     params: dict = {
-        "q": "Delft",
-        "lang": "en",
+        "category": "technology",
+        "language": "en,nl",
     }
+
+    # api_name: str = "weatherapi"
+    # endpoint: str = "current.json"
+    
+    # params: dict = {
+    #     "q": "Delft",
+    #     "lang": "en",
+    # }
 
     # Create an instance of the RESTClient with the request URL
     client = RESTClientManager()
